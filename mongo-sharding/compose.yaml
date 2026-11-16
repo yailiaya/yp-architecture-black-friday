@@ -55,6 +55,21 @@ services:
       - shard2-data:/data/db
     entrypoint: ["/bin/bash", "/scripts/entrypoint-shard02.sh"]
 
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos_router
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos_router:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

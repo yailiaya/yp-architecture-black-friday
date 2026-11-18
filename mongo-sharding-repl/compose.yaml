@@ -104,6 +104,36 @@ services:
       - mongodb_cluster_shard02_c_config:/data/configdb
     restart: always
 
+  shard03-a:
+    image: mongo:latest
+    container_name: shard-03-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_a_db:/data/db
+      - mongodb_cluster_shard03_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/scripts/entrypoint-shard03.sh"]
+
+  shard03-b:
+    image: mongo:latest
+    container_name: shard-03-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_b_db:/data/db
+      - mongodb_cluster_shard03_b_config:/data/configdb
+    restart: always
+
+  shard03-c:
+    image: mongo:latest
+    container_name: shard-03-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_c_db:/data/db
+      - mongodb_cluster_shard03_c_config:/data/configdb
+    restart: always
+
   pymongo_api:
     container_name: pymongo_api
     build: 
@@ -148,3 +178,9 @@ volumes:
   mongodb_cluster_shard02_b_config:
   mongodb_cluster_shard02_c_db:
   mongodb_cluster_shard02_c_config:
+  mongodb_cluster_shard03_a_db:
+  mongodb_cluster_shard03_a_config:
+  mongodb_cluster_shard03_b_db:
+  mongodb_cluster_shard03_b_config:
+  mongodb_cluster_shard03_c_db:
+  mongodb_cluster_shard03_c_config:

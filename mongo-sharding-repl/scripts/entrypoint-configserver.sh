@@ -2,7 +2,7 @@
 set -e
 
 # Start MongoDB in the background
-mongod --configsvr --replSet config_server --port 27017 --bind_ip_all &
+mongod --configsvr --replSet rs-config-server --port 27017 --bind_ip_all &
 
 # Store the PID of MongoDB
 MONGO_PID=$!
@@ -20,7 +20,7 @@ check_mongo_ready() {
 # Wait for all config servers to be ready
 wait_for_mongo() {
   echo "Waiting for MongoDB instances to start..."
-
+  
   # First wait for local instance
   until check_mongo_ready 127.0.0.1; do
     echo "Waiting for local MongoDB to start..."
@@ -32,8 +32,25 @@ wait_for_mongo() {
     sleep 2
   done
   echo "Local MongoDB is ready!"
-
-  echo "MongoDB instance is ready or timed out!"
+  
+  # Then wait for other instances with timeout
+  for host in configsvr02 configsvr03; do
+    attempt=0
+    max_attempts=30
+    until check_mongo_ready $host || [ $attempt -ge $max_attempts ]; do
+      echo "Waiting for $host to be ready... (attempt $attempt/$max_attempts)"
+      attempt=$((attempt+1))
+      sleep 2
+    done
+    
+    if [ $attempt -ge $max_attempts ]; then
+      echo "Timed out waiting for $host. Continuing anyway..."
+    else
+      echo "$host is ready!"
+    fi
+  done
+  
+  echo "All MongoDB instances are ready or timed out!"
 }
 
 # Initialize replica set
@@ -43,19 +60,21 @@ init_config_server() {
   # Adding more diagnostic output
   echo "Current MongoDB status:"
   mongosh --eval "db.adminCommand('ping')" || echo "Failed to ping MongoDB"
-
+  
   # Try to initialize replica set
   mongosh --eval "
     rs.initiate({
-      _id: \"config_server\",
-      configsvr: true,
-      version: 1,
-      members: [
-        { _id: 0, host : 'configSrv:27017' }
-      ]
+      _id: \"rs-config-server\", 
+      configsvr: true, 
+      version: 1, 
+      members: [ 
+        { _id: 0, host : 'configsvr01:27017' }, 
+        { _id: 1, host : 'configsvr02:27017' }, 
+        { _id: 2, host : 'configsvr03:27017' } 
+      ] 
     })
   " || echo "Failed to initialize replica set"
-
+  
   echo "Config server replica set initialization attempted."
 }
 

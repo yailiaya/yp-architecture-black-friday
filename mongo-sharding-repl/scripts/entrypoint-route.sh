@@ -1,33 +1,43 @@
 #!/bin/bash
-set -euo pipefail
-
+  
+# Wait for the config server replica set to elect a primary
 echo "Waiting for config server replica set to elect a primary..."
-until mongosh --host config_server/configSrv:27017 --quiet --eval 'rs.status().members.some(m => m.stateStr === "PRIMARY")' 2>/dev/null | grep -q true; do
+until mongosh --host rs-config-server/configsvr01:27017,configsvr02:27017,configsvr03:27017 --eval 'rs.status().members.some(m => m.stateStr === "PRIMARY")' | grep -q 'true'; do
   sleep 5
 done
 
-echo "Starting mongos..."
-mongos --port 27017 --configdb config_server/configSrv:27017 --bind_ip_all &
-MONGOS_PID=$!
-trap 'kill "$MONGOS_PID" 2>/dev/null || true' EXIT
-
-until mongosh --host 127.0.0.1:27017 --quiet --eval 'db.adminCommand({ping: 1}).ok' >/dev/null 2>&1; do
-  kill -0 "$MONGOS_PID"
-  sleep 2
+# Wait for each shard's replica set to elect a primary
+for shard in 1 2 3; do
+  replica_set="rs-shard-0${shard}"
+  host_prefix="shard0${shard}"
+  echo "Waiting for ${replica_set} to elect a primary..."
+  until mongosh --host ${replica_set}/${host_prefix}-a:27017,${host_prefix}-b:27017,${host_prefix}-c:27017 --eval 'rs.status().members.some(m => m.stateStr === "PRIMARY")' | grep -q 'true'; do
+    sleep 5
+  done
 done
 
-mongosh --host 127.0.0.1:27017 --quiet --eval '
-  for (const [name, host] of [["shard1", "shard1:27018"], ["shard2", "shard2:27019"]]) {
-    const found = db.adminCommand({listShards: 1}).shards.some(s => s._id === name);
-    if (!found) sh.addShard(`${name}/${host}`);
-  }
-  sh.enableSharding("somedb");
-  const appDB = db.getSiblingDB("somedb");
-  if (!appDB.getCollectionNames().includes("helloDoc")) appDB.createCollection("helloDoc");
-  const configDB = db.getSiblingDB("config");
-  if (!configDB.collections.findOne({_id: "somedb.helloDoc"})) {
-    sh.shardCollection("somedb.helloDoc", {name: "hashed"});
-  }
-'
+# Start mongos in the background
+echo "Starting mongos..."
+mongos --port 27017 --configdb rs-config-server/configsvr01:27017,configsvr02:27017,configsvr03:27017 --bind_ip_all &
 
-wait "$MONGOS_PID"
+# Wait for mongos to become available
+echo "Waiting for mongos to start..."
+until mongosh --port 27017 --eval 'db.adminCommand({ping: 1})' &> /dev/null; do
+  sleep 5
+done
+
+# Add the shards using the provided commands
+echo "Adding shards..."
+mongosh --port 27017
+sh.addShard("rs-shard-01/shard01-a:27017")
+sh.addShard("rs-shard-01/shard01-b:27017")
+sh.addShard("rs-shard-01/shard01-c:27017")
+sh.addShard("rs-shard-02/shard02-a:27017")
+sh.addShard("rs-shard-02/shard02-b:27017")
+sh.addShard("rs-shard-02/shard02-c:27017")
+sh.addShard("rs-shard-03/shard03-a:27017")
+sh.addShard("rs-shard-03/shard03-b:27017")
+sh.addShard("rs-shard-03/shard03-c:27017")
+
+# Keep the mongos process running in the foreground
+wait

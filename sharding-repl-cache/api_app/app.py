@@ -2,19 +2,19 @@ import json
 import logging
 import os
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import motor.motor_asyncio
 from bson import ObjectId
 from fastapi import Body, FastAPI, HTTPException, status
 from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.backends import Backend
 from fastapi_cache.decorator import cache
 from logmiddleware import RouterLoggingMiddleware, logging_config
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from pydantic.functional_validators import BeforeValidator
 from pymongo import errors
-from redis import asyncio as aioredis
+from redis.asyncio import RedisCluster
 from typing_extensions import Annotated
 
 # Configure JSON logging
@@ -45,6 +45,34 @@ else:
     cache = nocache
 
 
+class ClusterRedisBackend(Backend):
+    """Cache backend using cluster-routed, non-transactional Redis commands."""
+
+    def __init__(self, redis: RedisCluster):
+        self.redis = redis
+
+    async def get_with_ttl(self, key: str) -> Tuple[int, Optional[str]]:
+        ttl = await self.redis.ttl(key)
+        value = await self.redis.get(key)
+        return ttl, value
+
+    async def get(self, key: str) -> Optional[str]:
+        return await self.redis.get(key)
+
+    async def set(self, key: str, value: str, expire: Optional[int] = None) -> None:
+        await self.redis.set(key, value, ex=expire)
+
+    async def clear(self, namespace: Optional[str] = None, key: Optional[str] = None) -> int:
+        if key:
+            return await self.redis.delete(key)
+        if namespace:
+            deleted = 0
+            async for cache_key in self.redis.scan_iter(match=f"{namespace}:*"):
+                deleted += await self.redis.delete(cache_key)
+            return deleted
+        return 0
+
+
 client = motor.motor_asyncio.AsyncIOMotorClient(DATABASE_URL)
 db = client[DATABASE_NAME]
 
@@ -56,8 +84,10 @@ PyObjectId = Annotated[str, BeforeValidator(str)]
 @app.on_event("startup")
 async def startup():
     if REDIS_URL:
-        redis = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
-        FastAPICache.init(RedisBackend(redis), prefix="api:cache")
+        redis = RedisCluster.from_url(
+            REDIS_URL, encoding="utf8", decode_responses=True
+        )
+        FastAPICache.init(ClusterRedisBackend(redis), prefix="api:cache")
 
 
 class UserModel(BaseModel):

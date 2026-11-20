@@ -9,14 +9,18 @@ services:
       - "27117:27017"
     restart: always
     volumes:
-      - ./scripts:/scripts
+      - ./scripts:/scripts 
       - mongodb_cluster_router01_db:/data/db
       - mongodb_cluster_router01_config:/data/configdb
-    entrypoint: ["/scripts/entrypoint-route.sh"] 
+    entrypoint: ["/scripts/entrypoint-route.sh"]
+    networks:
+      - app-network
 
   configsvr01:
     image: mongo:latest
     container_name: mongo-config-01
+    networks:
+      - app-network
     volumes:
       - ./scripts:/scripts
       - mongodb_cluster_configsvr01_db:/data/db
@@ -27,6 +31,8 @@ services:
   configsvr02:
     image: mongo:latest
     container_name: mongo-config-02
+    networks:
+      - app-network
     command: mongod --port 27017 --configsvr --replSet rs-config-server
     volumes:
       - ./scripts:/scripts
@@ -37,6 +43,8 @@ services:
   configsvr03:
     image: mongo:latest
     container_name: mongo-config-03
+    networks:
+      - app-network
     command: mongod --port 27017 --configsvr --replSet rs-config-server
     volumes:
       - ./scripts:/scripts
@@ -47,6 +55,8 @@ services:
   shard01-a:
     image: mongo:latest
     container_name: shard-01-node-a
+    networks:
+      - app-network
     volumes:
       - ./scripts:/scripts
       - mongodb_cluster_shard01_a_db:/data/db
@@ -57,6 +67,8 @@ services:
   shard01-b:
     image: mongo:latest
     container_name: shard-01-node-b
+    networks:
+      - app-network
     command: mongod --port 27017 --shardsvr --replSet rs-shard-01
     volumes:
       - ./scripts:/scripts
@@ -67,6 +79,8 @@ services:
   shard01-c:
     image: mongo:latest
     container_name: shard-01-node-c
+    networks:
+      - app-network
     command: mongod --port 27017 --shardsvr --replSet rs-shard-01
     volumes:
       - ./scripts:/scripts
@@ -77,6 +91,8 @@ services:
   shard02-a:
     image: mongo:latest
     container_name: shard-02-node-a
+    networks:
+      - app-network
     volumes:
       - ./scripts:/scripts
       - mongodb_cluster_shard02_a_db:/data/db
@@ -87,6 +103,8 @@ services:
   shard02-b:
     image: mongo:latest
     container_name: shard-02-node-b
+    networks:
+      - app-network
     command: mongod --port 27017 --shardsvr --replSet rs-shard-02
     volumes:
       - ./scripts:/scripts
@@ -97,6 +115,8 @@ services:
   shard02-c:
     image: mongo:latest
     container_name: shard-02-node-c
+    networks:
+      - app-network
     command: mongod --port 27017 --shardsvr --replSet rs-shard-02
     volumes:
       - ./scripts:/scripts
@@ -107,6 +127,8 @@ services:
   shard03-a:
     image: mongo:latest
     container_name: shard-03-node-a
+    networks:
+      - app-network
     volumes:
       - ./scripts:/scripts
       - mongodb_cluster_shard03_a_db:/data/db
@@ -117,6 +139,8 @@ services:
   shard03-b:
     image: mongo:latest
     container_name: shard-03-node-b
+    networks:
+      - app-network
     command: mongod --port 27017 --shardsvr --replSet rs-shard-03
     volumes:
       - ./scripts:/scripts
@@ -127,6 +151,8 @@ services:
   shard03-c:
     image: mongo:latest
     container_name: shard-03-node-c
+    networks:
+      - app-network
     command: mongod --port 27017 --shardsvr --replSet rs-shard-03
     volumes:
       - ./scripts:/scripts
@@ -144,7 +170,7 @@ services:
     ports:
       - 8080:8080
     environment:
-      MONGODB_URL: "mongodb://router01:27017"
+      MONGODB_URL: "mongodb://router-01:27017"
       MONGODB_DATABASE_NAME: "somedb"
     networks:
       - app-network

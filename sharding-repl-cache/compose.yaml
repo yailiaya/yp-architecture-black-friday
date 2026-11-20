@@ -12,7 +12,9 @@ services:
       - ./scripts:/scripts
       - mongodb_cluster_router01_db:/data/db
       - mongodb_cluster_router01_config:/data/configdb
-    entrypoint: ["/scripts/entrypoint-route.sh"] 
+    entrypoint: ["/scripts/entrypoint-route.sh"]
+    networks:
+      - app-network 
 
   configsvr01:
     image: mongo:latest
@@ -23,6 +25,8 @@ services:
       - mongodb_cluster_configsvr01_config:/data/configdb
     restart: always
     entrypoint: ["/scripts/entrypoint-configserver.sh"]
+    networks:
+      - app-network
 
   configsvr02:
     image: mongo:latest
@@ -33,6 +37,8 @@ services:
       - mongodb_cluster_configsvr02_db:/data/db
       - mongodb_cluster_configsvr02_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   configsvr03:
     image: mongo:latest
@@ -43,6 +49,8 @@ services:
       - mongodb_cluster_configsvr03_db:/data/db
       - mongodb_cluster_configsvr03_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   shard01-a:
     image: mongo:latest
@@ -53,6 +61,8 @@ services:
       - mongodb_cluster_shard01_a_config:/data/configdb
     restart: always
     entrypoint: ["/scripts/entrypoint-shard01.sh"]
+    networks:
+      - app-network
 
   shard01-b:
     image: mongo:latest
@@ -63,6 +73,8 @@ services:
       - mongodb_cluster_shard01_b_db:/data/db
       - mongodb_cluster_shard01_b_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   shard01-c:
     image: mongo:latest
@@ -73,6 +85,8 @@ services:
       - mongodb_cluster_shard01_c_db:/data/db
       - mongodb_cluster_shard01_c_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   shard02-a:
     image: mongo:latest
@@ -83,6 +97,8 @@ services:
       - mongodb_cluster_shard02_a_config:/data/configdb
     restart: always
     entrypoint: ["/scripts/entrypoint-shard02.sh"]
+    networks:
+      - app-network
 
   shard02-b:
     image: mongo:latest
@@ -93,6 +109,8 @@ services:
       - mongodb_cluster_shard02_b_db:/data/db
       - mongodb_cluster_shard02_b_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   shard02-c:
     image: mongo:latest
@@ -103,6 +121,8 @@ services:
       - mongodb_cluster_shard02_c_db:/data/db
       - mongodb_cluster_shard02_c_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   shard03-a:
     image: mongo:latest
@@ -113,6 +133,8 @@ services:
       - mongodb_cluster_shard03_a_config:/data/configdb
     restart: always
     entrypoint: ["/scripts/entrypoint-shard03.sh"]
+    networks:
+      - app-network
 
   shard03-b:
     image: mongo:latest
@@ -123,6 +145,8 @@ services:
       - mongodb_cluster_shard03_b_db:/data/db
       - mongodb_cluster_shard03_b_config:/data/configdb
     restart: always
+    networks:
+      - app-network
 
   shard03-c:
     image: mongo:latest
@@ -133,19 +157,6 @@ services:
       - mongodb_cluster_shard03_c_db:/data/db
       - mongodb_cluster_shard03_c_config:/data/configdb
     restart: always
-
-  pymongo_api:
-    container_name: pymongo_api
-    build: 
-      context: api_app
-      dockerfile: Dockerfile
-    depends_on:
-      - router01
-    ports:
-      - 8080:8080
-    environment:
-      MONGODB_URL: "mongodb://router01:27017"
-      MONGODB_DATABASE_NAME: "somedb"
     networks:
       - app-network
 
@@ -160,7 +171,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       app-network:
-        ipv4_address: 173.17.0.2
+        ipv4_address: 173.17.0.101
 
   redis_2:
     image: "redis:latest"
@@ -173,7 +184,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       app-network:
-        ipv4_address: 173.17.0.3
+        ipv4_address: 173.17.0.102
 
   redis_3:
     image: "redis:latest"
@@ -186,7 +197,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       app-network:
-        ipv4_address: 173.17.0.4
+        ipv4_address: 173.17.0.103
 
   redis_4:
     image: "redis:latest"
@@ -199,7 +210,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       app-network:
-        ipv4_address: 173.17.0.5
+        ipv4_address: 173.17.0.104
 
   redis_5:
     image: "redis:latest"
@@ -212,7 +223,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       app-network:
-        ipv4_address: 173.17.0.6
+        ipv4_address: 173.17.0.105
 
   redis_6:
     image: "redis:latest"
@@ -225,7 +236,23 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       app-network:
-        ipv4_address: 173.17.0.7
+        ipv4_address: 173.17.0.106
+
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - router01
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://router-01:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis_1:6379"
+    networks:
+      - app-network
 
 networks:
   app-network:

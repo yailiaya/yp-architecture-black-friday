@@ -238,13 +238,33 @@ services:
       app-network:
         ipv4_address: 173.17.0.106
 
+  redis_cluster_init:
+    image: redis:latest
+    container_name: redis_cluster_init
+    depends_on:
+      - redis_1
+      - redis_2
+      - redis_3
+      - redis_4
+      - redis_5
+      - redis_6
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: ["/bin/sh", "/scripts/entrypoint-redis-cluster.sh"]
+    restart: "no"
+    networks:
+      - app-network
+
   pymongo_api:
     container_name: pymongo_api
     build: 
       context: api_app
       dockerfile: Dockerfile
     depends_on:
-      - router01
+      router01:
+        condition: service_started
+      redis_cluster_init:
+        condition: service_completed_successfully
     ports:
       - 8080:8080
     environment:

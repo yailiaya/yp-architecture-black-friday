@@ -4,9 +4,8 @@
 # Инициализируем бд
 ###
 
-docker exec -it router-01 mongosh --port 27017 <<EOF
+docker compose exec -T router01 mongosh <<EOF
 use somedb
 for(var i = 0; i < 1000; i++) db.helloDoc.insertOne({age:i, name:"ly"+i})
-sh.status()
 EOF
 

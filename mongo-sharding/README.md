@@ -37,6 +37,14 @@ curl --silent http://ifconfig.me
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
 
-## Диаграмма для этого варианта конфигурации приложения
+## Диаграммы вариантов конфигурации приложения
 
 [Диаграмма для варианта с двумя шардами.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/schema_1_shards.drawio)
+
+[Диаграмма для варианта с двумя шардами и репликацией.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/schema_2_shards_replicas.drawio)
+
+[Диаграмма для варианта с двумя шардами с репликацией и Redis кластером для кэша.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/schema_3_shards_replicas_cache.drawio)
+
+[Диаграмма для варианта с API Gateway.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/Schema_4_with_APIGateway.drawio)
+
+[Диаграмма для варианта с CDN.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/Schema_5_app_with_CDN.drawio)

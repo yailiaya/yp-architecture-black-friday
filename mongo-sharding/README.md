@@ -20,6 +20,9 @@ docker compose up -d
 
 Откройте в браузере http://localhost:8080
 
+
+Список доступных эндпоинтов, swagger http://localhost:8080/docs
+
 ### Если вы запускаете проект на предоставленной виртуальной машине
 
 Узнать белый ip виртуальной машины
@@ -33,3 +36,7 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+## Диаграмма для этого варианта конфигурации приложения
+
+[Диаграмма для варианта с двумя шардами.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/schema_1_shards.drawio)

@@ -33,3 +33,7 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+## Диаграмма для варианта конфигурации приложения с двумя шардами MongoDB с репликацией
+
+[Диаграмма для варианта с двумя шардами и репликацией.](https://github.com/yailiaya/yp-architecture-black-friday/blob/mobilemir/Diagrams/schema_2_shards_replicas.drawio)
